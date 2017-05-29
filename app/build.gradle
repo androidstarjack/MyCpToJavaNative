@@ -1,0 +1,84 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 24
+    buildToolsVersion "25.0.2"
+    defaultConfig {
+        applicationId "jni.yyh.com.mycptojavanative"
+        minSdkVersion 19
+        targetSdkVersion 24
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // 不声明ndk标签,项目默认会创建一个libapp.so的文件
+            ndk {
+                // 声明创建so库的文件名,会自动添加lib前缀, 添加了前缀,不会自动添加
+                moduleName "serviceData"
+                //声明启用Android日志, 在c/c++的源文件中使用的#include <android/log.h> 日志将得到输出
+                ldLibs "log"//实现__android_log_print
+                // 声明创建指定cpu架构的so库, 不声明的话, 默认(gradle 1.5.0)会生成4中架构 多一种mips架构
+                // 具体cpu架构的区别请参考:
+                // for detailed abiFilter descriptions, refer to "Supported ABIs" @
+                // https://developer.android.com/ndk/guides/abis.html#sa
+                abiFilters "armeabi", "armeabi-v7a", "x86"
+            }
+        }
+       /* productFlavors {
+            x86 {
+                versionCode Integer.parseInt("6" + defaultConfig.versionCode)
+                ndk {
+                    abiFilter "x86"
+                }
+            }
+            mips {
+                versionCode Integer.parseInt("4" + defaultConfig.versionCode)
+                ndk {
+                    abiFilter "mips"
+                }
+            }
+            armv7 {
+                versionCode Integer.parseInt("2" + defaultConfig.versionCode)
+                ndk {
+                    abiFilter "armeabi-v7a"
+                }
+            }
+            arm {
+                versionCode Integer.parseInt("1" + defaultConfig.versionCode)
+                ndk {
+                    abiFilters "armeabi", "armeabi-v7a"
+                }
+            }
+            fat
+        }*/
+       // 指定Android.mk文件
+        externalNativeBuild{
+            ndkBuild{
+                path "src/main/jni/Android.mk"
+            }
+        }
+        sourceSets.main {
+            // 1. 配置在根目录libs下可以加载第三方so库, (最好不要创建jniLibs, 在众多的开源库中可能会引起冲突,还没发现)
+            // 2. 运行时会自动将libs目录下的so库拷贝到指定目录
+            // 3. 如果自己创建的so不需要重新编译,可以将(app/build/intermediates/transforms)生成的so拷贝到这个目录
+            jni.srcDirs = []
+            // 如果是单个文件夹 可以直接这样如下配置
+           //jniLibs.srcDir 'src/main/libs'//设置目标的so存放路径
+            jniLibs.srcDir 'src/main/jniLibs'
+        }
+    }
+
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile 'com.android.support:appcompat-v7:24.2.1'
+    testCompile 'junit:junit:4.12'
+}
